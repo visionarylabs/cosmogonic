@@ -30,14 +30,13 @@ var heroAcceleration = 20;
 
 //bullet
 var bulletSpeed = 20;
-var bulletAcceleration = 20;
-var rateOfFire = 250; //in miliseconds
+var rateOfFire = 250; //in miliseconds, 250 default = 4 every 1s
 var lastFire = 0;
 var canFire = true;
 
 //enemies
 var enemySpeed = 10;
-var rateOfEnemies = 1000;
+var rateOfEnemies = 1000; //rate of enemy spwan, 1000 default = every 1s
 var lastEnemy = 0;
 
 // key Listeners
@@ -65,23 +64,24 @@ var hero = {
     width : 20,
     height : 30,
     speed : heroSpeed,
-    acceleration : heroAcceleration
+    acceleration : heroAcceleration,
+    destroy : false,
 };
 
 var bullets = [];
-
 var enemies = [];
 
-var makeBullet = function(x,y){
+var makeBullet = function(type,x,y,velx,vely){
     var bullet = {
-        x : x + hero.width/2 - 2,
+        type : type,
+        x : x,
         y : y,
-        velx : 0,
-        vely : -20,
+        velx : velx,
+        vely : vely,
         width : 4,
         height : 4,
         speed : bulletSpeed,
-        acceleration : bulletAcceleration
+        destroy : false,
     }
     return bullet;
 };
@@ -95,16 +95,22 @@ var makeEnemy = function(){
         width : 20,
         height : 20,
         speed : enemySpeed,
+        destroy : false,
     }
     return enemy;
 };
 
 var fireBullet = function(){
     if(canFire == false) return;
-    var temp = makeBullet(hero.x, hero.y);
+    var temp = makeBullet('hero',hero.x + hero.width/2 - 2, hero.y,0,-20);
     bullets.push(temp);
     canFire = false;
     lastFire = performance.now();
+}
+
+var enemyFireBullet = function(enemy){
+    var temp = makeBullet('enemy', enemy.x + enemy.width/2 - 2, enemy.y + enemy.height, 0, 10);
+    bullets.push(temp);
 }
 
 //start the game to play
@@ -118,8 +124,16 @@ var init = function(){
 
 //reset the game for start and reset
 var resetGame = function () {
+    console.log('resetGame');
     hero.x = canvas.width / 2 - (hero.width / 2);
     hero.y = canvas.height - (hero.height * 2);
+    hero.destroy = false;
+    bullets = [];
+    enemies = [];
+    lastEnemy = 0;
+    lastFire = 0;
+    canFire = true;
+    score = 0;
 };
 
 // Check inputs for how to update sprites
@@ -172,49 +186,99 @@ var update = function (modifier) {
         hero.velx = 0;
     }
     
-    // move bullets
-    for(var i=bullets.length -1;i >= 0; i--){
-        bullets[i].y += bullets[i].vely * bullets[i].speed * modifier * gameSpeed;
-        //destory bullets off the edge
-        if(bullets[i].y < 0){
-            bullets.splice(i,1);
-        }
-    }
-    
     // set rate of fire
     if( canFire = false == false && performance.now() - lastFire >= rateOfFire ){
         canFire = true;
     }
-
+    
     // make enemies
     if( lastEnemy < performance.now() - rateOfEnemies ){
         var enemy = makeEnemy();
         enemies.push(enemy);
         lastEnemy = performance.now();
     }
+
+    //Bullet and Ship Loops
+    var bulletMoveNum;
+    var enemyCheckNum;
+    var bulletCheckNum;
+
+    // move bullets
+    for(bulletMoveNum = bullets.length - 1; bulletMoveNum >= 0; bulletMoveNum--){
+        bullets[bulletMoveNum].y += bullets[bulletMoveNum].vely * bullets[bulletMoveNum].speed * modifier * gameSpeed;
+        //destroy bullets off the edge
+        if(bullets[bulletMoveNum].y < 0){
+            bullets.splice(bulletMoveNum,1);
+        }
+    }
     
     // move enemies
-    for(var i=enemies.length - 1; i >= 0; i--){
+    if(enemies.length <= 0) return;
+    
+    for(enemyCheckNum = enemies.length - 1; enemyCheckNum >= 0; enemyCheckNum--){
         //move enemies
-        enemies[i].x += enemies[i].velx * enemies[i].speed * modifier * gameSpeed;
+        enemies[enemyCheckNum].x += enemies[enemyCheckNum].velx * enemies[enemyCheckNum].speed * modifier * gameSpeed;
         
-        //destory enemies off the edge
-        if(enemies[i].x > canvas.width){
-            enemies.splice(i,1);
+        //enemy fire
+        if( ( Math.floor(Math.random() * 100) + 1 ) >= 98 ){
+            enemyFireBullet(enemies[enemyCheckNum]);
+        }
+        
+        //destroy enemies off the edge
+        if(enemies[enemyCheckNum].x > canvas.width){
+            enemies[enemyCheckNum].destroy = true;
+            continue;
         }
 
+        if(bullets.length <= 0) continue;
+
         //check bullets
-        for(var j=bullets.length -1;j >= 0; j--){
+        for(bulletCheckNum = bullets.length - 1; bulletCheckNum >= 0; bulletCheckNum--){
             //collisions
-            if( bullets[j].x > enemies[i].x &&
-                bullets[j].x < enemies[i].x + enemies[i].width &&
-                bullets[j].y > enemies[i].y &&
-                bullets[j].y < enemies[i].y + enemies[i].height
-            ){
-                enemies.splice(i,1);
-                bullets.splice(j,1);
-                score++;
+            if(bullets[bulletCheckNum].type == 'hero'){
+                if( bullets[bulletCheckNum].x > enemies[enemyCheckNum].x &&
+                    bullets[bulletCheckNum].x < enemies[enemyCheckNum].x + enemies[enemyCheckNum].width &&
+                    bullets[bulletCheckNum].y > enemies[enemyCheckNum].y &&
+                    bullets[bulletCheckNum].y < enemies[enemyCheckNum].y + enemies[enemyCheckNum].height
+                ){
+                    enemies[enemyCheckNum].destroy = true;
+                    bullets[bulletCheckNum].destroy = true;
+                    score++;
+                }
             }
+        }
+    }
+    
+    //check enemy bullets
+    for(bulletCheckNum = bullets.length - 1; bulletCheckNum >= 0; bulletCheckNum--){
+        //collisions
+        if(bullets[bulletCheckNum].type == 'enemy'){
+            if( bullets[bulletCheckNum].x > hero.x &&
+                bullets[bulletCheckNum].x < hero.x + hero.width &&
+                bullets[bulletCheckNum].y > hero.y &&
+                bullets[bulletCheckNum].y < hero.y + hero.height
+            ){
+                hero.destroy = true;
+                bullets[bulletCheckNum].destroy = true;
+            }
+        }
+    }
+
+    if(hero.destroy == true){
+        console.log('you lose!');
+        resetGame();
+        return;
+    }
+    
+    //clean arrays
+    for(bulletCheckNum = bullets.length - 1; bulletCheckNum >= 0; bulletCheckNum--){
+        if(bullets[bulletCheckNum].destroy == true){
+            bullets.splice(bulletCheckNum,1);
+        }
+    }
+    for(enemyCheckNum = enemies.length - 1; enemyCheckNum >= 0; enemyCheckNum--){
+        if(enemies[enemyCheckNum].destroy == true){
+            enemies.splice(enemyCheckNum,1);
         }
     }
 
@@ -229,18 +293,25 @@ var render = function () {
 
 // game sprites
 var showSprites = function(){
-    ctx.fillStyle       = "rgb(50,50,50)";
 
     //draw hero at x, y, w, h
+    ctx.fillStyle       = "rgb(150,150,150)";
     ctx.fillRect(hero.x, hero.y, hero.width, hero.height);
 
     //draw bullets
+    ctx.fillStyle       = "rgb(200,200,200)";
     for(i=0;i<bullets.length;i++){
-        ctx.fillRect(bullets[i].x, bullets[i].y, bullets[i].width, bullets[i].height);
+        if(bullets[i].type == 'hero'){
+            ctx.fillStyle       = "rgb(100,200,100)";
+            ctx.fillRect(bullets[i].x, bullets[i].y, bullets[i].width, bullets[i].height);
+        }else if(bullets[i].type == 'enemy'){
+            ctx.fillStyle       = "rgb(255,100,100)";
+            ctx.fillRect(bullets[i].x, bullets[i].y, bullets[i].width, bullets[i].height);
+        }
     }
     
     //draw enemies
-    ctx.fillStyle       = "rgb(100,50,50)";
+    ctx.fillStyle       = "rgb(150,50,50)";
     for(i=0;i<enemies.length;i++){
         ctx.fillRect(enemies[i].x, enemies[i].y, enemies[i].width, enemies[i].height);
     }
@@ -254,9 +325,9 @@ var showText = function(){
     ctx.fillText("Empty Space", 10, 26);
     ctx.fillText('Score: ' + score, 10, 56);
     //debug
-    //ctx.fillText('modifier: ' + modifier, 10, 76);
-    //ctx.fillText('speed: ' + hero.speed, 10, 96);
-    //ctx.fillText('velocity: ' + hero.velx, 10, 116);
+    ctx.fillText('modifier: ' + Math.ceil(modifier * 1000), 10, 76);
+    ctx.fillText('speed: ' + hero.speed, 10, 96);
+    ctx.fillText('velocity: ' + Math.ceil(hero.velx), 10, 116);
 };
 
 // The main game loop
