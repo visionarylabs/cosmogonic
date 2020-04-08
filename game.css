@@ -1,5 +1,5 @@
 /**
-    EMPTY SPACE GAME STYLES
+    Cosmogonic GAME STYLES
 **/
 
 .game-area{
@@ -17,11 +17,24 @@ body{
     padding: 0;
     text-align: center;
     background: #000;
-    color: #666;
+    color: #999;
     font-family: verdana, helvetica, arial, sans-serif;
     font-size: 1em;
     line-height: 1.6em;
 }
+a{
+    color: #999;
+    font-style: italic;
+}
+    a:link{
+        color: #999;
+    }
+    a:hover{
+        color: #bbb;
+    }
+    a:active{
+        color: #ccc;
+    }
 
 h1,h2,h3,h4,h5{
     text-transform: uppercase;
@@ -62,7 +75,7 @@ h1,h2,h3,h4,h5{
 }
 
 /**
-    EMPTY SPACE RESPONSIVE
+    RESPONSIVE
 **/
 @media (min-width: 500px) {
 

@@ -1,16 +1,27 @@
 ------------------------------------------------------------
-# Empty Space
+# Cosmogonic
 ## A sample web game project
 ------------------------------------------------------------
 * https://opalgames.com/games/emptyspace
 ------------------------------------------------------------
 
-rnd1 - init
-rnd2 - working ship movements
-rnd3 - working enemies and bullets
-rnd4 - todo: enemy bullets
+rnd1 - working ship movements
+rnd2 - working enemies and bullets
+rnd3 - enemy bullets
+rnd4 - todo: game over screen / transitions
 
 ------------------------------------------------------------
-### references
-https://medium.com/javascript-scene/javascript-factory-functions-with-es6-4d224591a8b1
-------------------------------------------------------------
+
+## Features
+* Vanilla JavaScript, HTML 5, CSS game example
+* Ship Space Combat Game
+* Velocity and Friction
+* Delta timer
+* Enemy ship factories
+* Bullet fire and collisions
+* Sound effects and Music
+* Screen transitions and timing
+* Scoring and leader board
+* Sprite animations
+* Power-ups
+* Multiple levels, enemy types, bosses

@@ -1,5 +1,5 @@
 /**
-    EMPTY SPACE
+    Cosmogonic
     v0.1 - 11-30-19
     Ben Borkowski - Design and Development
     screen: 256 x 240
@@ -33,11 +33,15 @@ var bulletSpeed = 20;
 var rateOfFire = 250; //in miliseconds, 250 default = 4 every 1s
 var lastFire = 0;
 var canFire = true;
+var lastFireSide = 'left';
 
 //enemies
 var enemySpeed = 10;
 var rateOfEnemies = 1000; //rate of enemy spwan, 1000 default = every 1s
 var lastEnemy = 0;
+
+//bg
+var bg = {};
 
 // key Listeners
 var keysDown = {};
@@ -55,17 +59,61 @@ addEventListener("keyup", function (e) {
 // Cross-browser support for requestAnimationFrame
 var requestAnimationFrame = w.requestAnimationFrame || w.webkitRequestAnimationFrame || w.msRequestAnimationFrame || w.mozRequestAnimationFrame;
 
+//main game sounds
+var mixer = function(){
+    
+    var sound01 = document.createElement("audio");
+    sound01.src = "sounds/sound-fire-02.mp3";
+    
+    var sound02 = document.createElement("audio");
+    sound02.src = "sounds/sound-fire-02.mp3";
+    
+    var sound03 = document.createElement("audio");
+    sound03.src = "sounds/sound-fire-03.mp3";
+    
+    var sound04 = document.createElement("audio");
+    sound04.src = "sounds/sound-hit-01.mp3";
+    
+    var sound05 = document.createElement("audio");
+    sound05.src = "sounds/sound-explode-01.mp3";
+    
+    var playSound01 = function(){
+        sound01.play();
+    }
+    var playSound02 = function(){
+        sound02.play();
+    }
+    var playSound03 = function(){
+        sound03.play();
+    }
+    var playSound04 = function(){
+        sound04.play();
+    }
+    var playSound05 = function(){
+        sound05.play();
+    }
+    
+    return{
+        playSound01 : playSound01,
+        playSound02 : playSound02,
+        playSound03 : playSound03,
+        playSound04 : playSound04,
+        playSound05 : playSound05,
+    }
+}();
+
 // main game sprites
 var hero = {
     x : 0,
     y : 0,
     velx : 0,
     vely : 0,
-    width : 20,
-    height : 30,
+    width : 31,
+    height : 31,
     speed : heroSpeed,
     acceleration : heroAcceleration,
     destroy : false,
+    image : null,
 };
 
 var bullets = [];
@@ -92,25 +140,39 @@ var makeEnemy = function(){
         y : 50,
         velx : 20,
         vely : 0,
-        width : 20,
-        height : 20,
+        width : 31,
+        height : 21,
         speed : enemySpeed,
         destroy : false,
+        image : null,
     }
+    enemy.image = new Image();
+    enemy.image.src = './images/enemy-ship-01.png';
     return enemy;
 };
 
 var fireBullet = function(){
+    var bulletOffest = 5;
     if(canFire == false) return;
-    var temp = makeBullet('hero',hero.x + hero.width/2 - 2, hero.y,0,-20);
+    //fire side of ship
+    if(lastFireSide == 'left'){
+        bulletOffest = 5;
+        lastFireSide = 'right';
+    }else if(lastFireSide == 'right'){
+        bulletOffest = hero.width - 5;
+        lastFireSide = 'left';
+    }
+    var temp = makeBullet('hero',hero.x + bulletOffest, hero.y,0,-20);
     bullets.push(temp);
     canFire = false;
     lastFire = performance.now();
+    mixer.playSound03();
 }
 
 var enemyFireBullet = function(enemy){
     var temp = makeBullet('enemy', enemy.x + enemy.width/2 - 2, enemy.y + enemy.height, 0, 10);
     bullets.push(temp);
+    mixer.playSound02();
 }
 
 //start the game to play
@@ -118,13 +180,23 @@ var init = function(){
     canvas.width = 800;
     canvas.height = 600;
     canvas.id = 'game-canvas';
+    
+    //load graphics
+    hero.image = new Image();
+    hero.image.src = './images/hero-ship-01.png';
+    bg.image = new Image();
+    bg.image.src = './images/cosmogonic-bg.jpg';
+    
+    //console.log('hero');
+    //console.log(hero);
+    
     resetGame();
     mainLoop();
 };
 
 //reset the game for start and reset
 var resetGame = function () {
-    console.log('resetGame');
+    //console.log('resetGame');
     hero.x = canvas.width / 2 - (hero.width / 2);
     hero.y = canvas.height - (hero.height * 2);
     hero.destroy = false;
@@ -244,6 +316,7 @@ var update = function (modifier) {
                     enemies[enemyCheckNum].destroy = true;
                     bullets[bulletCheckNum].destroy = true;
                     score++;
+                    mixer.playSound04();
                 }
             }
         }
@@ -260,12 +333,13 @@ var update = function (modifier) {
             ){
                 hero.destroy = true;
                 bullets[bulletCheckNum].destroy = true;
+                mixer.playSound05();
             }
         }
     }
 
     if(hero.destroy == true){
-        console.log('you lose!');
+        //console.log('you lose!');
         resetGame();
         return;
     }
@@ -287,6 +361,7 @@ var update = function (modifier) {
 // Draw everything
 var render = function () {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    showBg();
     showText();
     showSprites();
 };
@@ -294,9 +369,13 @@ var render = function () {
 // game sprites
 var showSprites = function(){
 
-    //draw hero at x, y, w, h
-    ctx.fillStyle       = "rgb(150,150,150)";
-    ctx.fillRect(hero.x, hero.y, hero.width, hero.height);
+    if(hero.image.src){
+        ctx.drawImage( hero.image, hero.x, hero.y, hero.width, hero.height );
+    }else{
+        //draw hero at x, y, w, h
+        ctx.fillStyle       = "rgb(150,150,150)";
+        ctx.fillRect(hero.x, hero.y, hero.width, hero.height);
+    }
 
     //draw bullets
     ctx.fillStyle       = "rgb(200,200,200)";
@@ -313,7 +392,11 @@ var showSprites = function(){
     //draw enemies
     ctx.fillStyle       = "rgb(150,50,50)";
     for(i=0;i<enemies.length;i++){
-        ctx.fillRect(enemies[i].x, enemies[i].y, enemies[i].width, enemies[i].height);
+        if(enemies[i].image.src){
+            ctx.drawImage( enemies[i].image, enemies[i].x, enemies[i].y, enemies[i].width, enemies[i].height );
+        }else{
+            ctx.fillRect(enemies[i].x, enemies[i].y, enemies[i].width, enemies[i].height);
+        }
     }
     
 };
@@ -322,12 +405,19 @@ var showSprites = function(){
 var showText = function(){
     ctx.fillStyle       = "white";
     ctx.font            = "normal 11pt Verdana";
-    ctx.fillText("Empty Space", 10, 26);
+    ctx.fillText("Cosmogonic", 10, 26);
     ctx.fillText('Score: ' + score, 10, 56);
     //debug
     ctx.fillText('modifier: ' + Math.ceil(modifier * 1000), 10, 76);
     ctx.fillText('speed: ' + hero.speed, 10, 96);
     ctx.fillText('velocity: ' + Math.ceil(hero.velx), 10, 116);
+};
+
+// game ui
+var showBg = function(){
+    if(bg.image.src){
+        ctx.drawImage( bg.image, 0, 0, canvas.width, canvas.height );
+    }
 };
 
 // The main game loop
