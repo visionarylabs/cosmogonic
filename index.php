@@ -27,7 +27,7 @@
             <h3>Credits</h3>
             <p>Design and development by Ben Borkowski</p>
         </div>
-
+        <?php include_once('../../lib/includes/opalgames-footer.php'); ?>
         <?php /* 
             simple way to load js at the end of the body 
         */ ?>
