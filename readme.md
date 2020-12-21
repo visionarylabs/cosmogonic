@@ -2,7 +2,7 @@
 # Cosmogonic
 ## A sample web game project
 ------------------------------------------------------------
-* https://opalgames.com/games/emptyspace
+* https://opalgames.com/games/cosmogonic
 ------------------------------------------------------------
 
 rnd1 - working ship movements
