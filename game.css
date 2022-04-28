@@ -21,6 +21,7 @@ body{
     font-family: verdana, helvetica, arial, sans-serif;
     font-size: 1em;
     line-height: 1.6em;
+    padding-top: 20px;
 }
 a{
     color: #999;
@@ -59,6 +60,7 @@ h1,h2,h3,h4,h5{
     width: auto;
     height: auto;
     margin: auto;
+    border: 1px solid #999;
 }
 
 .game-info{

@@ -23,10 +23,12 @@ var friction = .95;
 
 //game state
 var score = 0;
+var state = 'start'; //game,start,end
 
 //hero
 var heroSpeed = 250; //px per second
 var heroAcceleration = 20;
+var heroLives = 3;
 
 //bullet
 var bulletSpeed = 20;
@@ -61,7 +63,7 @@ var requestAnimationFrame = w.requestAnimationFrame || w.webkitRequestAnimationF
 
 //main game sounds
 var mixer = function(){
-    
+
     var sound01 = document.createElement("audio");
     sound01.src = "sounds/sound-fire-02.mp3";
     
@@ -76,7 +78,10 @@ var mixer = function(){
     
     var sound05 = document.createElement("audio");
     sound05.src = "sounds/sound-explode-01.mp3";
-    
+
+    var music01 = document.createElement("audio");
+    sound05.src = "sounds/Factory-On-Mercury_Looping.mp3";
+
     var playSound01 = function(){
         sound01.play();
     }
@@ -92,6 +97,19 @@ var mixer = function(){
     var playSound05 = function(){
         sound05.play();
     }
+
+    var playMusic01 = function(){
+        console.log('play music 1');
+        if (typeof music01.loop == 'boolean'){
+            music01.loop = true;
+        }else{
+            music01.addEventListener('ended', function() {
+                this.currentTime = 0;
+                this.play();
+            }, false);
+        }
+        music01.play();
+    }
     
     return{
         playSound01 : playSound01,
@@ -99,6 +117,7 @@ var mixer = function(){
         playSound03 : playSound03,
         playSound04 : playSound04,
         playSound05 : playSound05,
+        playMusic01 : playMusic01,
     }
 }();
 
@@ -180,6 +199,7 @@ var init = function(){
     canvas.width = 800;
     canvas.height = 600;
     canvas.id = 'game-canvas';
+    canvas.onselectstart = function () { return false; } //stop text select on double click
     
     //load graphics
     hero.image = new Image();
@@ -189,14 +209,19 @@ var init = function(){
     
     //console.log('hero');
     //console.log(hero);
-    
-    resetGame();
+    mixer.playSound01();
+    resetScreen();
     mainLoop();
 };
 
-//reset the game for start and reset
+//reset the game when you run out of lives
 var resetGame = function () {
-    //console.log('resetGame');
+    score = 0;
+    heroLives = 3;
+}
+
+//reset the screen for start and reset
+var resetScreen = function () {
     hero.x = canvas.width / 2 - (hero.width / 2);
     hero.y = canvas.height - (hero.height * 2);
     hero.destroy = false;
@@ -205,12 +230,30 @@ var resetGame = function () {
     lastEnemy = 0;
     lastFire = 0;
     canFire = true;
-    score = 0;
-};
+}
+
+var destoryShip = function() {
+    resetScreen();
+    heroLives--;
+    if(heroLives <= 0){
+        state = 'start';
+    }
+}
 
 // Check inputs for how to update sprites
 var update = function (modifier) {
     
+    //MENU STATE
+    if(state == 'start'){
+        // Player holding enter
+        if (13 in keysDown ) {
+            resetGame();
+            state = 'game';
+        }
+        return;
+    }
+
+    //GAME STATE
     //check keys down
     
     // Player holding space
@@ -339,8 +382,7 @@ var update = function (modifier) {
     }
 
     if(hero.destroy == true){
-        //console.log('you lose!');
-        resetGame();
+        destoryShip();
         return;
     }
     
@@ -403,14 +445,23 @@ var showSprites = function(){
 
 // game ui
 var showText = function(){
-    ctx.fillStyle       = "white";
-    ctx.font            = "normal 11pt Verdana";
+    ctx.fillStyle = "white";
+    ctx.font = "normal 11pt Verdana";
+    ctx.textAlign = "left";
     ctx.fillText("Cosmogonic", 10, 26);
     ctx.fillText('Score: ' + score, 10, 56);
+    ctx.fillText('Lives: ' + heroLives, 10, 76);
+
+    //MENU STATE
+    if(state == 'start'){
+        ctx.textAlign = "center";
+        ctx.fillText('Press Enter to Start', (canvas.width / 2), (canvas.height /2) );
+    }
+
     //debug
-    ctx.fillText('modifier: ' + Math.ceil(modifier * 1000), 10, 76);
-    ctx.fillText('speed: ' + hero.speed, 10, 96);
-    ctx.fillText('velocity: ' + Math.ceil(hero.velx), 10, 116);
+    //ctx.fillText('modifier: ' + Math.ceil(modifier * 1000), 10, 76);
+    //ctx.fillText('speed: ' + hero.speed, 10, 96);
+    //ctx.fillText('velocity: ' + Math.ceil(hero.velx), 10, 116);
 };
 
 // game ui
